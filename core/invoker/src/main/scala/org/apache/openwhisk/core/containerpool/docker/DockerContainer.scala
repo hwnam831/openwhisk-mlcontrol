@@ -91,7 +91,6 @@ object DockerContainer {
     val dnsOptString = if (docker.clientVersion.startsWith("1.12")) { "--dns-opt" } else { "--dns-option" }
     val corePerSocket = cpuNum/2
     val socketPattern: Regex = "socket([0-1])".r
-    
 
     val offset = name match{
       case Some(namestr) =>
