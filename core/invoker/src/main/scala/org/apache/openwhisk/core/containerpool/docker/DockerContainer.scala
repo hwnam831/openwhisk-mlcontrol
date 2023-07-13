@@ -39,6 +39,8 @@ import spray.json._
 import org.apache.openwhisk.core.containerpool.logging.LogLine
 import org.apache.openwhisk.core.entity.ExecManifest.ImageName
 import org.apache.openwhisk.http.Messages
+import sys.process._
+import scala.language.postfixOps
 
 object DockerContainer {
 
@@ -84,10 +86,13 @@ object DockerContainer {
     val params = dockerRunParameters.flatMap {
       case (key, valueList) => valueList.toList.flatMap(Seq(key, _))
     }
-
+    val cpuNum = ("nproc" !!).trim.toInt
+    val cpuSet = cpuNum/2 + "-" + (cpuNum-1)
     // NOTE: --dns-option on modern versions of docker, but is --dns-opt on docker 1.12
     val dnsOptString = if (docker.clientVersion.startsWith("1.12")) { "--dns-opt" } else { "--dns-option" }
     val args = Seq(
+      "--cpuset-cpus",
+      cpuSet,
       "--cpu-shares",
       cpuShares.toString,
       "--memory",
