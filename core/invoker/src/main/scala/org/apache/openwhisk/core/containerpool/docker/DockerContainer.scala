@@ -39,13 +39,14 @@ import spray.json._
 import org.apache.openwhisk.core.containerpool.logging.LogLine
 import org.apache.openwhisk.core.entity.ExecManifest.ImageName
 import org.apache.openwhisk.http.Messages
+import scala.language.postfixOps
 import sys.process._
 import scala.util.matching.Regex
 
 object DockerContainer {
 
   private val byteStringSentinel = ByteString(Container.ACTIVATION_LOG_SENTINEL)
-  val cpuNum = ("nproc" !!).trim.toInt
+  
   /**
    * Creates a container running on a docker daemon.
    *
@@ -86,12 +87,12 @@ object DockerContainer {
     val params = dockerRunParameters.flatMap {
       case (key, valueList) => valueList.toList.flatMap(Seq(key, _))
     }
-
     // NOTE: --dns-option on modern versions of docker, but is --dns-opt on docker 1.12
     val dnsOptString = if (docker.clientVersion.startsWith("1.12")) { "--dns-opt" } else { "--dns-option" }
+    val cpuNum = ("nproc" !!).trim.toInt
     val corePerSocket = cpuNum/2
-    val socketPattern: Regex = "socket([0-1])".r
 
+    val socketPattern: Regex = "socket([0-1])".r
     val offset = name match{
       case Some(namestr) =>
         socketPattern.findFirstMatchIn(namestr) match {
@@ -100,6 +101,7 @@ object DockerContainer {
         }
       case None => 0
     }
+
     val cpuSet = offset + "-" + (offset+corePerSocket-1)
     val args = Seq(
       "--cpuset-cpus",
