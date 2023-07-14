@@ -41,6 +41,7 @@ import org.apache.openwhisk.core.entity.ExecManifest.ImageName
 import org.apache.openwhisk.http.Messages
 import sys.process._
 import scala.language.postfixOps
+import scala.util.matching.Regex
 
 object DockerContainer {
 
@@ -87,7 +88,17 @@ object DockerContainer {
       case (key, valueList) => valueList.toList.flatMap(Seq(key, _))
     }
     val cpuNum = ("nproc" !!).trim.toInt
-    val cpuSet = cpuNum/2 + "-" + (cpuNum-1)
+    val corePerSocket = cpuNum/2
+    val socketPattern: Regex = "socket([0-1])".r
+    val offset = name match{
+      case Some(namestr) =>
+        socketPattern.findFirstMatchIn(namestr) match {
+          case Some(pmatch) => pmatch.group(1).toInt * corePerSocket
+          case None => 0
+        }
+      case None => 0
+    }
+    val cpuSet = offset + "-" + (offset+corePerSocket-1)
     // NOTE: --dns-option on modern versions of docker, but is --dns-opt on docker 1.12
     val dnsOptString = if (docker.clientVersion.startsWith("1.12")) { "--dns-opt" } else { "--dns-option" }
     val args = Seq(
