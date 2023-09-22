@@ -43,6 +43,10 @@ import scala.annotation.tailrec
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 
+import scala.language.postfixOps
+import sys.process._
+import scala.util.matching.Regex
+
 /**
  * A loadbalancer that schedules workload based on a hashing-algorithm.
  *
@@ -368,7 +372,12 @@ object ShardingContainerPoolBalancer extends LoadBalancerProvider {
 
   /** Generates a hash based on the string representation of namespace and action */
   def generateHash(namespace: EntityName, action: FullyQualifiedEntityName): Int = {
-    (namespace.asString.hashCode() ^ action.asString.hashCode()).abs
+    val socketPattern: Regex = "node([0-9])".r
+    socketPattern.findFirstMatchIn(action.asString) match {
+      case Some(pmatch) => pmatch.group(1).toInt
+      case None => 0
+    }
+    //(namespace.asString.hashCode() ^ action.asString.hashCode()).abs
   }
 
   /** Euclidean algorithm to determine the greatest-common-divisor */
