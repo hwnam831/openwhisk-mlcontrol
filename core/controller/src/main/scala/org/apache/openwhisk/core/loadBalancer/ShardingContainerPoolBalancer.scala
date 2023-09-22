@@ -43,8 +43,6 @@ import scala.annotation.tailrec
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 
-import scala.language.postfixOps
-import sys.process._
 import scala.util.matching.Regex
 
 /**
