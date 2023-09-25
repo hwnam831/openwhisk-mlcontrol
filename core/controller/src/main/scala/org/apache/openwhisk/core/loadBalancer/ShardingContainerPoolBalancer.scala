@@ -265,6 +265,9 @@ class ShardingContainerPoolBalancer(
     val chosen = if (invokersToUse.nonEmpty) {
       val hash = ShardingContainerPoolBalancer.generateHash(msg.user.namespace.name, action.fullyQualifiedName(false))
       val homeInvoker = hash % invokersToUse.size
+      logging.info(
+          this,
+          s"available invoker count ${invokersToUse.size}, action '${msg.action.asString}' hashval ${hash}")
       val stepSize = stepSizes(hash % stepSizes.size)
       val invoker: Option[(InvokerInstanceId, Boolean)] = ShardingContainerPoolBalancer.schedule(
         action.limits.concurrency.maxConcurrent,
@@ -371,6 +374,7 @@ object ShardingContainerPoolBalancer extends LoadBalancerProvider {
   /** Generates a hash based on the string representation of namespace and action */
   def generateHash(namespace: EntityName, action: FullyQualifiedEntityName): Int = {
     val socketPattern: Regex = "node([0-9])".r
+
     socketPattern.findFirstMatchIn(action.asString) match {
       case Some(pmatch) => pmatch.group(1).toInt
       case None => 0
